@@ -16,6 +16,7 @@ const {
   STAGES,
   CATEGORIES,
   CATEGORY_META,
+  GROUP_ONLY_CATEGORIES,
   pickQuestionsForSession,
   localiseQuestion,
 } = require('./reflective-questions');
@@ -165,18 +166,32 @@ io.on('connection', (socket) => {
   });
 
   // ── create_room ────────────────────────────────────────────────────────────
-  socket.on('create_room', ({ hostName, categories, maxQuestions, lang = 'en', writingMode = 'digital' }) => {
+  socket.on('create_room', ({ hostName, categories, maxQuestions, lang = 'en', writingMode = 'digital', mode = 'group' }) => {
     if (!hostName) {
       socket.emit('error', { message: 'Missing host name' });
       return;
     }
     const safeLang = SUPPORTED_LANGS.includes(lang) ? lang : 'en';
-    const safeCategories = Array.isArray(categories) && categories.length > 0
-      ? categories.filter((c) => CATEGORIES[c])
-      : Object.keys(CATEGORIES); // all categories if none specified
+    const isSolo = mode === 'solo';
 
-    const sessionLength = Math.min(Math.max(parseInt(maxQuestions, 10) || 8, 3), 15);
-    const questions = pickQuestionsForSession(safeCategories, sessionLength);
+    let questions;
+    let safeCategories;
+
+    // Build category list — for solo, exclude group-only categories (CONNECTION)
+    if (isSolo) {
+      safeCategories = Object.keys(CATEGORIES).filter(
+        (c) => !GROUP_ONLY_CATEGORIES.includes(c)
+      );
+      const sessionLength = Math.min(Math.max(parseInt(maxQuestions, 10) || 3, 3), 12);
+      questions = pickQuestionsForSession(safeCategories, sessionLength);
+    } else {
+      // Group mode: use selected categories (or all)
+      safeCategories = Array.isArray(categories) && categories.length > 0
+        ? categories.filter((c) => CATEGORIES[c])
+        : Object.keys(CATEGORIES);
+      const sessionLength = Math.min(Math.max(parseInt(maxQuestions, 10) || 8, 3), 15);
+      questions = pickQuestionsForSession(safeCategories, sessionLength);
+    }
 
     if (questions.length === 0) {
       socket.emit('error', { message: 'No questions matched your selection' });
@@ -194,6 +209,7 @@ io.on('connection', (socket) => {
       questions,
       currentQuestionIndex: -1,
       state: STATE.LOBBY,
+      mode: isSolo ? 'solo' : 'group',
       writingMode: ['digital', 'paper'].includes(writingMode) ? writingMode : 'digital',
       answersForCurrentQuestion: [],   // [{ socketId, title, detail, heartsFrom: [socketId,...] }]
       completedQuestions: [],          // [{ question, answers: [...] }]
@@ -344,6 +360,42 @@ io.on('connection', (socket) => {
       stage: q.stage,
       category: q.category,
     });
+  });
+
+  // ── skip_question ──────────────────────────────────────────────────────────
+  // Host can skip the current question mid-writing (or mid-reveal). Skipped
+  // questions are not archived. Advances to next question, or to CLOSURE if
+  // this was the last one.
+  socket.on('skip_question', ({ code }) => {
+    const room = rooms[code];
+    if (!room || room.hostSocketId !== socket.id) return;
+    if (room.state !== STATE.WRITING && room.state !== STATE.REVEAL) return;
+
+    const nextIndex = room.currentQuestionIndex + 1;
+    if (nextIndex >= room.questions.length) {
+      // No more questions → go to CLOSURE
+      room.state = STATE.CLOSURE;
+      io.to(code).emit('game_state_change', { state: STATE.CLOSURE });
+      io.to(code).emit('closure_started', {
+        totalQuestions: room.completedQuestions.length,
+        participants: room.participants.map((p) => ({ name: p.name })),
+      });
+      return;
+    }
+
+    room.currentQuestionIndex = nextIndex;
+    room.answersForCurrentQuestion = [];
+    room.state = STATE.WRITING;
+    const q = room.questions[nextIndex];
+    io.to(code).emit('game_state_change', { state: STATE.WRITING });
+    io.to(code).emit('question_data', {
+      question: localiseQuestion(q, room.lang),
+      questionNumber: nextIndex + 1,
+      totalQuestions: room.questions.length,
+      stage: q.stage,
+      category: q.category,
+    });
+    io.to(code).emit('writing_progress', { submitted: 0, total: room.participants.length });
   });
 
   // ── submit_commitment ──────────────────────────────────────────────────────
