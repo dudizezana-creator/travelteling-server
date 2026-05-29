@@ -23,10 +23,14 @@ const CATEGORIES = {
   INNER:      'INNER',        // 🌱 שינוי וריפוי פנימי
   CHAOS:      'CHAOS',        // 🌪 התמודדות ושחרור שליטה
   PRESENCE:   'PRESENCE',     // 🧘 נוכחות וחיבור פנימי
+  SELF:       'SELF',         // 🤲 הקשר שלי עם עצמי
   DREAMS:     'DREAMS',       // ✨ חלומות ומבט קדימה
-  CONNECTION: 'CONNECTION',   // 🤲 השתקפויות בקשר
+  CONNECTION: 'CONNECTION',   // 💞 השתקפויות בקשר (group-only)
   RETRO:      'RETRO',        // 🧭 רטרוספקטיבה וסיכום
 };
+
+// Categories that only make sense in group/couple mode (filtered out for solo)
+const GROUP_ONLY_CATEGORIES = ['CONNECTION'];
 
 const CATEGORY_META = {
   HOME:       { emoji: '🏠', he: 'חזרה הביתה',         en: 'Coming Home' },
@@ -35,8 +39,9 @@ const CATEGORY_META = {
   INNER:      { emoji: '🌱', he: 'שינוי וריפוי פנימי',  en: 'Inner Change & Healing' },
   CHAOS:      { emoji: '🌪', he: 'התמודדות ושחרור',     en: 'Letting Go of Control' },
   PRESENCE:   { emoji: '🧘', he: 'נוכחות וחיבור פנימי', en: 'Presence & Inner Connection' },
+  SELF:       { emoji: '🤲', he: 'הקשר שלי עם עצמי',    en: 'My Bond With Myself' },
   DREAMS:     { emoji: '✨', he: 'חלומות ומבט קדימה',   en: 'Dreams & What\'s Next' },
-  CONNECTION: { emoji: '🤲', he: 'השתקפויות בקשר',     en: 'Reflections on Our Bond' },
+  CONNECTION: { emoji: '💞', he: 'השתקפויות בקשר',     en: 'Reflections on Our Bond' },
   RETRO:      { emoji: '🧭', he: 'רטרוספקטיבה',         en: 'Looking Back' },
 };
 
@@ -180,6 +185,36 @@ const REFLECTIVE_QUESTIONS = [
     'What did I learn about the people I journeyed with that I didn\'t know before?'),
 
 
+  // ── 🤲 SELF — my bond with myself (universal, works solo + group) ──────────
+  q('s01', STAGES.DEEP, CATEGORIES.SELF,
+    'מה אני הכי מעריך/ה בעצמי עכשיו, אחרי כל מה שעברתי במסע הזה?',
+    'What do I most appreciate about myself now, after everything I went through on this journey?'),
+
+  q('s02', STAGES.DEEP, CATEGORIES.SELF,
+    'באיזה רגע מדויק הרגשתי חיבור טהור ואהבה עצמית אמיתית?',
+    'In what precise moment did I feel pure connection and true self-love?'),
+
+  q('s03', STAGES.DEEP, CATEGORIES.SELF,
+    'מתי נתתי לעצמי להיות מובל/ת אך ורק על ידי האינטואיציה שלי, ואיך זה הרגיש לי בבטן?',
+    'When did I let myself be guided purely by my intuition — and how did that feel in my gut?'),
+
+  q('s04', STAGES.DEEP, CATEGORIES.SELF,
+    'באיזה רגע הייתי החבר/ה הכי טוב/ה של עצמי בתוך קושי?',
+    'In what moment was I my own best friend during hardship?'),
+
+  q('s05', STAGES.DEEP, CATEGORIES.SELF,
+    'על איזו הלקאה עצמית שהייתה לי בדרך אני מוכן/ה עכשיו להסתכל בחמלה ולסלוח לעצמי?',
+    'What self-criticism am I now ready to look at with compassion — and forgive myself for?'),
+
+  q('s06', STAGES.DEEP, CATEGORIES.SELF,
+    'מה גיליתי על היכולת שלי להחזיק לעצמי את המרחב, שלא ידעתי קודם?',
+    'What did I discover about my ability to hold space for myself, that I didn\'t know before?'),
+
+  q('s07', STAGES.DEEP, CATEGORIES.SELF,
+    'באיזה רגע הרגשתי הכי פגיע/ה במסע הזה, ואיך שמרתי שם על עצמי?',
+    'In what moment was I most vulnerable on this journey — and how did I take care of myself?'),
+
+
   // ── 🌅 INTEGRATION — translating to real life ──────────────────────────────
   q('i01', STAGES.INTEGRATION, CATEGORIES.HOME,
     'מה הדבר שהכי מפחיד אותי לקראת החזרה הביתה ולשגרה?',
@@ -196,6 +231,10 @@ const REFLECTIVE_QUESTIONS = [
   q('i04', STAGES.INTEGRATION, CATEGORIES.HOME,
     'אם הייתי יכול לקחת רק דבר אחד מהמסע הזה במזוודה שלי — מה הוא היה?',
     'If I could take only one thing from this journey in my suitcase — what would it be?'),
+
+  q('i04b', STAGES.INTEGRATION, CATEGORIES.HOME,
+    'אם הייתי יכול/ה לארוז למזוודה רק תחושה אחת מהמסע הזה — איזו תחושה זו הייתה?',
+    'If I could pack only one feeling from this journey into my suitcase — what feeling would it be?'),
 
   q('i05', STAGES.INTEGRATION, CATEGORIES.DREAMS,
     'איך המסע הזה השפיע על החלומות שלי קדימה?',
@@ -327,6 +366,7 @@ module.exports = {
   STAGES,
   CATEGORIES,
   CATEGORY_META,
+  GROUP_ONLY_CATEGORIES,
   REFLECTIVE_QUESTIONS,
   pickQuestionsForSession,
   localiseQuestion,
